@@ -1,0 +1,5 @@
+workspace = { members = ["iousbhost", "iousbhost-sys"] }
+[package]
+name = "iousbhost-rs"
+version = "0.1.0"
+edition = "2021"

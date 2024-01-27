@@ -1,0 +1,11 @@
+[package]
+name = "iousbhost"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+iousbhost-sys = {path = "../iousbhost-sys"}
+dispatch = "0.2"
+objc = "0.2"

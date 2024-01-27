@@ -1,0 +1,17 @@
+[package]
+name = "iousbhost-sys"
+version = "0.1.0"
+edition = "2021"
+
+[build-dependencies]
+bindgen = "0.69"
+apple-sdk = "0.5"
+
+[dependencies]
+objc = "0.2"
+
+[target.aarch64-apple-darwin]
+rustflags = [
+  "-C", "link-arg=-undefined",
+  "-C", "link-arg=dynamic_lookup"
+]

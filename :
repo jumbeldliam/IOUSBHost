@@ -1,0 +1,752 @@
+use iousbhost_sys::*;
+use core::ops::{Deref, DerefMut};
+
+enum AppleUsbError {
+    InvalidAddress = 1,
+    ProtectionFailure = 2,
+    NoSpace = 3,
+    InvalidArgument = 4,
+    Failure = 5,
+    ResourceShortage = 6,
+    NotReceiver = 7,
+    NoAccess = 8,
+    MemoryFailure = 9,
+    MemoryError = 10,
+    AlreadyInSet = 11,
+    NotInSet = 12,
+    NameExists = 13,
+    Aborted = 14,
+    InvalidName = 15,
+    InvalidTask = 16,
+    InvalidRight = 17,
+    InvalidValue = 18,
+    UrefsOverflow = 19,
+    InvalidCapability = 20,
+    RightExists = 21,
+    InvalidHost = 22,
+    MemoryPresent = 23,
+    MemoryDataMoved = 24,
+    MemoryRestartCopy = 25,
+    InvalidProcessorSet = 26,
+    PolicyLimit = 27,
+    InvalidPolicy = 28,
+    InvalidObject = 29,
+    AlreadyWaiting = 30,
+    DefaultSet = 31,
+    ExceptionProtected = 32,
+    InvalidLedger = 33,
+    InvalidMemoryControl = 34,
+    InvalidSecurity = 35,
+    NotDepressed = 36,
+    Terminated = 37,
+    LockSetDestroyed = 38,
+    LockUnstable = 39,
+    LockOwned = 40,
+    LockOwnedSelf = 41,
+    SemaphoreDestroyed = 42,
+    RpcServerTerminated = 43,
+    RpcTerminateOrphan = 44,
+    RpcContinueOrphan = 45,
+    NotSupported = 46,
+    NodeDown = 47,
+    NotWaiting = 48,
+    OperationTimedOut = 49,
+    Unknown
+}
+
+impl From<kern_return_t> for AppleUsbError {
+    fn from(err: kern_return_t) -> AppleUsbError {
+        use AppleUsbError as E;
+        match err as u32 {
+            KERN_INVALID_ADDRESS => E::InvalidAddress,
+            KERN_PROTECTION_FAILURE => E::ProtectionFailure,
+            KERN_NO_SPACE => E::NoSpace,
+            KERN_INVALID_ARGUMENT => E::InvalidArgument,
+            KERN_FAILURE => E::Failure,
+            KERN_RESOURCE_SHORTAGE => E::ResourceShortage,
+            KERN_NOT_RECEIVER => E::NotReceiver,
+            KERN_NO_ACCESS => E::NoAccess,
+            KERN_MEMORY_FAILURE => E::MemoryFailure,
+            KERN_MEMORY_ERROR => E::MemoryError,
+            KERN_ALREADY_IN_SET => E::AlreadyInSet,
+            KERN_NOT_IN_SET => E::NotInSet,
+            KERN_NAME_EXISTS => E::NameExists,
+            KERN_ABORTED => E::Aborted,
+            KERN_INVALID_NAME => E::InvalidName,
+            KERN_INVALID_TASK => E::InvalidTask,
+            KERN_INVALID_RIGHT => E::InvalidRight,
+            KERN_INVALID_VALUE => E::InvalidValue,
+            KERN_UREFS_OVERFLOW => E::UrefsOverflow,
+            KERN_INVALID_CAPABILITY => E::InvalidCapability,
+            KERN_RIGHT_EXISTS => E::RightExists,
+            KERN_INVALID_HOST => E::InvalidHost,
+            KERN_MEMORY_PRESENT => E::MemoryPresent,
+            KERN_MEMORY_DATA_MOVED => E::MemoryDataMoved,
+            KERN_MEMORY_RESTART_COPY => E::MemoryRestartCopy,
+            KERN_INVALID_PROCESSOR_SET => E::InvalidProcessorSet,
+            KERN_POLICY_LIMIT => E::PolicyLimit,
+            KERN_INVALID_POLICY => E::InvalidPolicy,
+            KERN_INVALID_OBJECT => E::InvalidObject,
+            KERN_ALREADY_WAITING => E::AlreadyWaiting,
+            KERN_DEFAULT_SET => E::DefaultSet,
+            KERN_EXCEPTION_PROTECTED => E::ExceptionProtected,
+            KERN_INVALID_LEDGER => E::InvalidLedger,
+            KERN_INVALID_MEMORY_CONTROL => E::InvalidMemoryControl,
+            KERN_INVALID_SECURITY => E::InvalidSecurity,
+            KERN_NOT_DEPRESSED => E::NotDepressed,
+            KERN_TERMINATED => E::Terminated,
+            KERN_LOCK_SET_DESTROYED => E::LockSetDestroyed,
+            KERN_LOCK_UNSTABLE => E::LockUnstable,
+            KERN_LOCK_OWNED => E::LockOwned,
+            KERN_LOCK_OWNED_SELF => E::LockOwnedSelf,
+            KERN_SEMAPHORE_DESTROYED => E::SemaphoreDestroyed,
+            KERN_RPC_SERVER_TERMINATED => E::RpcServerTerminated,
+            KERN_RPC_TERMINATE_ORPHAN => E::RpcTerminateOrphan,
+            KERN_RPC_CONTINUE_ORPHAN => E::RpcContinueOrphan,
+            KERN_NOT_SUPPORTED => E::NotSupported,
+            KERN_NODE_DOWN => E::NodeDown,
+            KERN_NOT_WAITING => E::NotWaiting,
+            KERN_OPERATION_TIMED_OUT => E::OperationTimedOut,
+            _ => E::Unknown,
+        }
+    }
+}
+
+struct UsbDevice {
+    inner: IOUSBHostDevice,
+}
+
+impl Drop for UsbDevice {
+    fn drop(&mut self) {
+        unsafe {
+            self.inner.destroy()
+        }
+    }
+}
+
+impl UsbDevice {
+    fn new() {
+
+    }
+    fn open(&self) -> Result<(), AppleUsbError> {
+        let err = unsafe { open(&0, &self.inner as *const IOUSBHostDevice as i32) };
+        if err != 0 {
+            return Err(err.into())
+        }else {
+            Ok(())
+        }
+    }
+
+    fn send_device_request_with_data(&self, request: IOUSBDeviceRequest, data: &mut [u8]) {
+        //self.inner.sendDeviceRequest_data_bytesTransferred_completionTimeout_error_()
+    }
+
+    fn send_device_request(&self, request: IOUSBDeviceRequest) -> Result<(), UsbError> {
+        let mut err = NSErr::new();
+        if !unsafe { self.inner.sendDeviceRequest_error_(request, &mut *err)} {
+            Err(err.into())
+        }else {
+            Ok(())
+        }
+    }
+
+    fn enqueue_device_request(&self, request: IOUSBDeviceRequest, data: &mut [u8], on_completed: impl Fn()) {
+        //self.inner.enqueueDeviceRequest_data_completionTimeout_error_completionHandler_()
+    }
+
+    fn abort_device_requests(&self, abort_option: IOUSBHostAbortOption) -> Result<(), UsbError> {
+        let mut err = NSErr::new();
+        if !unsafe {self.inner.abortDeviceRequestsWithOption_error_(abort_option, &mut *err)} {
+            Err(err.into())
+        }else {
+            Ok(())
+        }
+    }
+
+    fn io_service(&self) -> io_service_t {
+        unsafe {
+            self.inner.ioService()
+        }
+    }
+
+    fn queue(&self) -> dispatch_queue_t {
+        unsafe {
+            self.inner.queue()
+        }
+    }
+
+    fn close(&self) -> Result<(), AppleUsbError> {
+        let err = unsafe {
+            close(&self.inner as *const IOUSBHostDevice as i32)
+        };
+
+        if err != 0 {
+            Err(err.into())
+        }else {
+            Ok(())
+        }
+    }
+
+    //NOTE: cannot find it?
+    fn reset(&self) {
+        //self.inner.reset()
+    }
+
+    pub fn device_descriptor(&self) -> Option<DeviceDescriptor<'_>> {
+        let ptr = unsafe { self.inner.deviceDescriptor() };
+        DeviceDescriptor::new(ptr)
+    }
+
+    fn capability_descriptors(&self) -> impl Iterator<Item = CapabilityDescriptor<'_>> {
+        //TODO: this should be changed to NonNull rather than a raw ptr (stuff with pin)
+        let ptr = unsafe { self.inner.capabilityDescriptors() };
+        CapabilityDescriptors {
+            inner: ptr,
+            lt: PhantomData,
+        }
+    }
+
+    pub fn configuration_descriptor(&self) -> Option<ConfigurationDescriptor> {
+        let ptr = unsafe { self.inner.configurationDescriptor() };
+        ConfigurationDescriptor::new(ptr)
+    }
+
+    fn device_address(&self) -> u64 {
+        unsafe {
+            self.inner.deviceAddress()
+        }
+    }
+
+    fn req(&self) {
+        //self.inner.deviceRequest()
+        //self.inner.abortDeviceRequests()
+        //self.inner.createIOBuffer()
+        //self.inner.Address();
+        //getSpeed(0);
+        //self.inner.port_status();
+    }
+
+    /*TODO: cannot find these fns
+    fn configuration_descriptor_with_value(&self, val: u8) {
+        //let ptr = unsafe { self.inner.configurationDescriptorWithValue(val) };
+    }
+    fn string_descriptor(&self) {
+        self.inner.stringDescriptor()
+    }
+        //self.inner.tIOUSBDeviceRequestTypeValue()
+        //self.inner.tIOUSBDeviceRequestRecipientValue()
+    */
+}
+
+struct HostPipe {
+    inner: IOUSBHostPipe
+}
+
+impl HostPipe {
+    fn adjust(&self, descriptors: impl IntoRawSource) -> Result<(), UsbError> {
+        let mut err = NSErr::new();
+        if !unsafe{self.inner.adjustPipeWithDescriptors_error_(descriptors.raw(), &mut *err)} {
+            Err(err.into())
+        }else{
+            Ok(())
+        }
+    }
+
+    fn set_idle_timeout(&self, duration: f64) -> Result<(), UsbError> {
+        let mut err = NSErr::new();
+        if !unsafe {self.inner.setIdleTimeout_error_(duration, &mut *err)} {
+            Err(err.into())
+        }else {
+            Ok(())
+        }
+    }
+
+    fn clear_stall(&self) -> Result<(), UsbError> {
+        let mut err = NSErr::new();
+        if !unsafe{self.inner.clearStallWithError_(&mut *err)} {
+            Err(err.into())
+        }else {
+            Ok(())
+        }
+    }
+
+    fn send_control_request_with_data(&self, request: DeviceRequest, data: &mut [u8]) -> Result<(), UsbError> {
+        //self.inner.sendControlRequest_data_bytesTransferred_completionTimeout_error_()
+        todo!()
+    }
+
+    fn send_control_request(&self, request: DeviceRequest) -> Result<(), UsbError> {
+        let mut err = NSErr::new();
+        if !unsafe { self.inner.sendControlRequest_error_(request.into(), &mut *err) } {
+            Err(err.into())
+        }else {
+            Ok(())
+        }
+    }
+
+    fn enqueue_control_request_with_data(&self, request: DeviceRequest, data: &mut[u8], f: impl Fn()) -> Result<(), UsbError> {
+        todo!()
+    }
+
+    fn enqueue_control_request(&self, request: DeviceRequest, f: impl Fn()) -> Result<(), UsbError> {
+        todo!()
+    }
+
+    fn abort(&self, abort: IOUSBHostAbortOption) -> Result<(), UsbError> {
+        let mut err = NSErr::new();
+        if !unsafe {self.inner.abortWithOption_error_(abort, &mut *err)} {
+            Err(err.into())
+        }else{
+            Ok(())
+        }
+    }
+
+    fn enable_streams(&self) -> Result<(), UsbError> {
+        let mut err = NSErr::new();
+        if !unsafe{self.inner.enableStreamsWithError_(&mut *err)} {
+            Err(err.into())
+        }else{
+            Ok(())
+        }
+    }
+
+    fn disable_streams(&self) -> Result<(), UsbError> {
+        let mut err = NSErr::new();
+        if !unsafe{self.inner.disableStreamsWithError_(&mut *err)} {
+            Err(err.into())
+        }else {
+            Ok(())
+        }
+    }
+
+    fn copy_stream(&self, stream_id: u64) -> Result<IOUSBHostStream, UsbError> {
+        let mut err = NSErr::new();
+        let stream = unsafe{self.inner.copyStreamWithStreamID_error_(stream_id, &mut *err)};
+        if err.is_err() {
+            Err(err.into())
+        }else{
+            Ok(stream)
+        }
+    }
+
+    fn original_descriptors(&self) -> impl Iterator<Item = IoSourceDescriptor<'_>> + Deref<Target = *const IOUSBHostIOSourceDescriptors>  {
+        let ptr = unsafe{self.inner.originalDescriptors()};
+        IoSourceDescriptors {
+            inner: ptr,
+            lt: PhantomData,
+        }
+    }
+
+    fn descriptors(&self) -> impl Iterator<Item = IoSourceDescriptor<'_>> + Deref<Target = *const IOUSBHostIOSourceDescriptors> {
+        let ptr = unsafe { self.inner.descriptors()};
+        IoSourceDescriptors {
+            inner: ptr,
+            lt: PhantomData,
+        }
+    }
+
+    fn idle_timeout(&self) -> f64 {
+        unsafe { self.inner.idleTimeout()}
+    }
+}
+
+struct IoSourceDescriptors<'a> {
+    inner: *const IOUSBHostIOSourceDescriptors,
+    lt: PhantomData<&'a IOUSBHostIOSourceDescriptors>
+}
+
+impl IntoRawSource for IoSourceDescriptors<'_> {
+    fn raw(&self) -> *const IOUSBHostIOSourceDescriptors {
+        self.inner
+    }
+}
+
+impl <'a> Iterator for IoSourceDescriptors<'a> {
+    type Item = IoSourceDescriptor<'a>;
+    fn next(&mut self) -> Option<IoSourceDescriptor<'a>> {
+        let desc = IoSourceDescriptor::new(self.inner)?;
+        self.inner = unsafe { self.inner.add(1) } ;
+        Some(desc)
+    }
+}
+
+struct IoSourceDescriptor<'a> {
+    inner: NonNull<IOUSBHostIOSourceDescriptors>,
+    lt: PhantomData<&'a ()>,
+}
+
+trait IntoRawSource {
+    fn raw(&self) -> *const IOUSBHostIOSourceDescriptors;
+}
+
+impl IntoRawSource for IoSourceDescriptor<'_> {
+    fn raw(&self) -> *const IOUSBHostIOSourceDescriptors {
+        let ptr = unsafe { self.inner.as_ref() as *const IOUSBHostIOSourceDescriptors };
+        ptr
+    }
+}
+
+impl IoSourceDescriptor<'_> {
+    fn new(ptr: *const IOUSBHostIOSourceDescriptors) -> Option<Self> {
+        let ptr = NonNull::new(ptr as *mut IOUSBHostIOSourceDescriptors)?;
+        Some(Self{
+            inner: ptr,
+            lt: PhantomData,
+        })
+    }
+
+    fn bcd_usb(&self) -> u16 {
+        unsafe {
+            self.inner.as_ref().bcdUSB
+        }
+    }
+
+    fn endpoint_descriptor(&self) -> EndpointDescriptor<'_> {
+        let ptr = &unsafe {self.inner.as_ref().descriptor};
+        EndpointDescriptor::new(ptr).unwrap()
+    }
+
+    fn super_speed_companion_descriptor(&self) -> SuperSpeedCompanionDescriptor {
+        let ptr = &unsafe{self.inner.as_ref().ssCompanionDescriptor};
+        SuperSpeedCompanionDescriptor::new(ptr).unwrap()
+    }
+
+    fn super_speed_plus_companion_descriptor(&self) -> SuperSpeedPlusCompanionDescriptor {
+        let ptr = &unsafe{self.inner.as_ref().sspCompanionDescriptor};
+        SuperSpeedPlusCompanionDescriptor::new(ptr).unwrap()
+    }
+}
+
+struct SuperSpeedCompanionDescriptor<'a> {
+    inner: NonNull<IOUSBSuperSpeedEndpointCompanionDescriptor>,
+    lt: PhantomData<&'a IOUSBSuperSpeedEndpointCompanionDescriptor>,
+}
+
+struct SuperSpeedPlusCompanionDescriptor<'a> {
+    inner: NonNull<IOUSBSuperSpeedPlusIsochronousEndpointCompanionDescriptor>,
+    lt: PhantomData<&'a IOUSBSuperSpeedPlusIsochronousEndpointCompanionDescriptor>
+}
+
+impl SuperSpeedPlusCompanionDescriptor<'_> {
+    fn new(ptr: *const IOUSBSuperSpeedPlusIsochronousEndpointCompanionDescriptor) -> Option<Self> {
+        let ptr = NonNull::new(ptr as *mut IOUSBSuperSpeedPlusIsochronousEndpointCompanionDescriptor)?;
+        Some(Self {
+            inner: ptr,
+            lt: PhantomData,
+        })
+    }
+    fn length(&self) -> u8 {
+        unsafe {
+        self.inner.as_ref().bLength
+        }
+    }
+
+    fn descriptor_type(&self) -> DescriptorType {
+        DescriptorType(unsafe{self.inner.as_ref().bDescriptorType})
+    }
+
+    fn bytes_per_interval(&self) -> u32 {
+        unsafe {self.inner.as_ref().dwBytesPerInterval}
+    }
+}
+
+impl SuperSpeedCompanionDescriptor<'_> {
+    fn new(ptr: *const IOUSBSuperSpeedEndpointCompanionDescriptor) -> Option<Self> {
+        let ptr = NonNull::new(ptr as *mut IOUSBSuperSpeedEndpointCompanionDescriptor)?;
+        Some(Self {
+            inner: ptr,
+            lt: PhantomData,
+        })
+    }
+
+    fn length(&self) -> u8 {
+        unsafe {
+        self.inner.as_ref().bLength
+        }
+    }
+
+    fn descriptor_type(&self) -> DescriptorType {
+        DescriptorType(unsafe{self.inner.as_ref().bDescriptorType})
+    }
+
+    fn max_burst(&self) -> u8 {
+        unsafe { self.inner.as_ref().bMaxBurst}
+    }
+
+    fn attributes(&self) -> u8 {
+        unsafe {self.inner.as_ref().bmAttributes}
+    }
+
+    fn bytes_per_interval(&self) -> u16 {
+        unsafe {self.inner.as_ref().wBytesPerInterval}
+    }
+}
+
+struct DescriptorType(u8);
+
+impl From<DeviceRequest> for IOUSBDeviceRequest {
+    fn from(req: DeviceRequest) -> IOUSBDeviceRequest {
+        todo!()
+    }
+}
+
+enum DeviceRequest {
+
+}
+
+struct HostInterface {
+    inner: IOUSBHostInterface
+}
+
+impl HostInterface {
+    fn idle_timeout(&self) -> f64 {
+        unsafe {
+            self.inner.idleTimeout()
+        }
+    }
+
+    fn set_idle_timeout(&self, interval: f64) -> Result<(), UsbError> {
+        let mut err = NSErr::new();
+        if unsafe { !self.inner.setIdleTimeout_error_(interval, &mut *err) }{
+            Err(err.into())
+        }else{
+            Ok(())
+        }
+    }
+
+    fn configuration_descriptor(&self) -> Option<ConfigurationDescriptor<'_>> {
+        let ptr = unsafe { self.inner.configurationDescriptor() };
+        ConfigurationDescriptor::new(ptr)
+    }
+
+    fn interface_descriptor(&self) -> Option<InterfaceDescriptor<'_>> {
+        let ptr = unsafe { self.inner.interfaceDescriptor() };
+        InterfaceDescriptor::new(ptr)
+    }
+
+    //TODO: matching dictionary?
+    
+    fn select_alternate_setting(&self, alternate_setting: AlternateSetting) -> Result<(), UsbError> {
+        let mut err = NSErr::new();
+        if !unsafe {self.inner.selectAlternateSetting_error_(alternate_setting.into(), &mut *err)} {
+            return Err(err.into())
+        }else {
+            Ok(())
+        }
+    }
+
+    fn copy_pipe(&self, address: u64) -> Result<IOUSBHostPipe, UsbError> {
+        let mut err = NSErr::new();
+        let pipe = unsafe {
+            self.inner.copyPipeWithAddress_error_(address, &mut *err)
+        };
+
+        if err.is_err() {
+            return Err(err.into())
+        }else {
+            Ok(pipe)
+        }
+    }
+}
+
+struct NSErr(NSError);
+
+impl NSErr {
+    fn new() -> Self {
+        Self(NSError(core::ptr::null_mut()))
+    }
+
+    fn is_err(&self) -> bool {
+        !self.0.0.is_null()
+    }
+}
+
+impl From<NSErr> for UsbError {
+    fn from(err: NSErr) -> UsbError {
+        todo!()
+    }
+}
+
+enum UsbError {
+
+}
+
+impl Deref for NSErr {
+    type Target = NSError;
+    fn deref(&self) -> &NSError {
+        &self.0
+    }
+}
+
+impl DerefMut for NSErr {
+    fn deref_mut(&mut self) -> &mut NSError {
+        &mut self.0
+    }
+}
+
+
+enum AlternateSetting {
+
+}
+
+impl From<AlternateSetting> for u64 {
+    fn from(setting: AlternateSetting) -> u64 {
+        todo!()
+    }
+}
+
+
+struct InterfaceDescriptor<'a> {
+    inner: NonNull<IOUSBInterfaceDescriptor>,
+    lt: PhantomData<&'a IOUSBInterfaceDescriptor>,
+}
+
+impl InterfaceDescriptor<'_> {
+    fn new(ptr: *const IOUSBInterfaceDescriptor) -> Option<Self> {
+        let ptr = NonNull::new(ptr as *mut IOUSBInterfaceDescriptor)?;
+        Some(Self{
+            inner: ptr,
+            lt: PhantomData,
+        })
+    }
+}
+
+use core::ptr::NonNull;
+use core::marker::PhantomData;
+
+struct DeviceDescriptor<'a> {
+    inner: NonNull<IOUSBDeviceDescriptor>,
+    lt: PhantomData<&'a IOUSBDeviceDescriptor>,
+}
+
+impl Drop for DeviceDescriptor<'_> {
+    fn drop(&mut self) {
+    }
+}
+
+impl DeviceDescriptor<'_> {
+    fn new(ptr: *const IOUSBDeviceDescriptor) -> Option<Self> {
+        let ptr = NonNull::new(ptr as *mut IOUSBDeviceDescriptor)?;
+        Some(Self{
+            inner: ptr,
+            lt: PhantomData,
+        })
+    }
+}
+
+struct ConfigurationDescriptor<'a> {
+    inner: NonNull<IOUSBConfigurationDescriptor>,
+    lt: PhantomData<&'a IOUSBConfigurationDescriptor>,
+}
+
+impl ConfigurationDescriptor<'_> {
+    fn new(ptr: *const IOUSBConfigurationDescriptor) -> Option<Self> {
+        let ptr = NonNull::new(ptr as *mut IOUSBConfigurationDescriptor)?;
+        Some(Self {
+            inner: ptr,
+            lt: PhantomData,
+        })
+    }
+}
+
+struct CapabilityDescriptor<'a> {
+    inner: NonNull<IOUSBBOSDescriptor>,
+    lt: PhantomData<&'a IOUSBBOSDescriptor>,
+}
+
+impl CapabilityDescriptor<'_> {
+    fn new(ptr: *const IOUSBBOSDescriptor) -> Option<Self> {
+        let ptr = NonNull::new(ptr as *mut IOUSBBOSDescriptor)?;
+        Some(Self{
+            inner: ptr,
+            lt: PhantomData,
+        })
+    }
+}
+
+struct CapabilityDescriptors<'a> {
+    inner: *const IOUSBBOSDescriptor,
+    lt: PhantomData<&'a IOUSBBOSDescriptor>,
+}
+
+impl <'a> Iterator for CapabilityDescriptors<'a> {
+    type Item = CapabilityDescriptor<'a>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        let desc = CapabilityDescriptor::new(self.inner)?;
+        self.inner = unsafe { self.inner.add(1) } ;
+        Some(desc)
+    }
+}
+
+impl Drop for CapabilityDescriptors<'_> {
+    fn drop(&mut self) {
+        for _desc in self.into_iter() { }
+    }
+}
+
+impl Drop for CapabilityDescriptor<'_> {
+    fn drop(&mut self) {
+
+    }
+}
+
+struct EndpointDescriptor<'a> {
+    inner: NonNull<IOUSBEndpointDescriptor>,
+    lt: PhantomData<&'a IOUSBEndpointDescriptor>,
+}
+
+//TODO: should make a usbutil for typedescriptors and other generally used stuff to wrap the sys
+//stuff in
+
+fn a() {
+    //IOUSBHostInterface.initWithIOService()
+    //IOUSBHostDevice.initWithIOService()
+    //IOUSBHostObject.initWithIOService()
+}
+
+impl EndpointDescriptor<'_> {
+    fn new(ptr: *const IOUSBEndpointDescriptor) -> Option<Self> {
+        let ptr = NonNull::new(ptr as *mut IOUSBEndpointDescriptor)?;
+        Some(Self{
+            inner: ptr,
+            lt: PhantomData,
+        })
+    }
+    const SIZE: u8 = 7;
+
+    fn size(&self) -> u8 {
+        Self::SIZE
+    }
+
+    fn descriptor_type(&self) -> u8 {
+        unsafe {
+            self.inner.as_ref().bDescriptorType
+        }
+    }
+
+    fn endpoint_address(&self) -> u8 {
+        unsafe {
+            self.inner.as_ref().bEndpointAddress
+        }
+    }
+
+    fn interval(&self) -> u8 {
+        unsafe {
+            self.inner.as_ref().bInterval
+        }
+    }
+
+    fn attributes(&self) -> u8 {
+        unsafe {
+            self.inner.as_ref().bmAttributes
+        }
+    }
+
+    fn max_packet_size(&self) -> u16 {
+        unsafe {
+            self.inner.as_ref().wMaxPacketSize
+        }
+    }
+}
+
